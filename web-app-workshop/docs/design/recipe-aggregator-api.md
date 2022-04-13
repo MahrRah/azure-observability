@@ -40,7 +40,7 @@ Deployment process is automated.
 Alternative approach: using Serverless Function App instead of App Service
 | Pros                                                   | Cons                                  |
 | ------------------------------------------------------ | ------------------------------------- |
-| Out of the box observability with Application Insights | Harder to add custom instrumentation  |
+| Out-of-the-box observability with Application Insights | Harder to add custom instrumentation  |
 |                                                        |                                       |
 
 ## Technology
