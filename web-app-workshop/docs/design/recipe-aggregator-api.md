@@ -32,7 +32,7 @@ Deployment process is automated.
 | Pros                                                                           | Cons                                  |
 | ------------------------------------------------------------------------------ | ------------------------------------- |
 | Simple to implement RESTful API in ASP.NET Core                                | There are other Web App code samples  |
-| Available out of the box observability with Application Insights               |                                       |
+| Available out-of-the-box observability with Application Insights               |                                       |
 | ASP.NET Core Web App can be easily extended with custom instrumentation code   |                                       |
 | Multiple Azure components involved to show different observability aspects     |                                       |
 |                                                                                |                                       |
