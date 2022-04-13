@@ -10,9 +10,8 @@ This milestone includes creating a Recipe aggregator RESTful API application tha
 
 * Recipe aggregator RESTful API is created
   * A user can add a new recipe containing recipe name, recipe content or URL to it
-  * A user can upload a picture for a recipe
-  * A user can update specified recipe (including updating a picture)
-  * A user can delete specified recipe (deleting recipe means also deleting a picture)
+  * A user can update specified recipe
+  * A user can delete specified recipe
   * Recipes can be listed (there is a pagination implemented)
   * Only authorized user (admin) is able to add/delete/modify recipes. Listing or viewing specific recipe is available for everyone.
 
@@ -22,7 +21,7 @@ This milestone includes creating a Recipe aggregator RESTful API application tha
 
 ## Proposed Design / Suggested Approach
 
-Recipe aggregator RESTful API is implemented using ASP.NET Core API and deployed to App Service. Uploaded by user pictures are stored in Azure Blob Storage. Recipe data (recipe name, recipe content or recipe URL, picture URI from Azure Blob Storage) are stored as documents in a CosmosDB. Web App should use Managed Identity instead of connection strings when accessing other Azure components.
+Recipe aggregator RESTful API is implemented using ASP.NET Core API and deployed to App Service. Recipe data (recipe name, recipe content or recipe URL) are stored as documents in a CosmosDB. Web App should use Managed Identity instead of connection strings when accessing other Azure components.
 Authentication and authorization is implemented according to the [ASP.NET Core security recommendations](https://docs.microsoft.com/en-us/aspnet/core/security/?view=aspnetcore-6.0).
 
 The performance and scalability of the recipe aggregator API is not a concern at this point, thus there is no need to implement caching, however, [a distributed caching](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/distributed?view=aspnetcore-6.0) can be added at a later stage.
@@ -48,8 +47,6 @@ Alternative approach: using Serverless Function App instead of App Service
 * ASP.NET Core API app
 * App Service
 * CosmosDB
-* Azure Blob Storage for images
-* Redis Cache or CDN Cache?
 * [Managed Identity](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity)
 * Key Vault for storing secrets
 * Azure Bicep for Infrastructure as Code
