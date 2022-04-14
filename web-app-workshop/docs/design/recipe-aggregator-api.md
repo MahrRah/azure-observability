@@ -1,4 +1,4 @@
-# WIP - Recipe aggregator API
+# Recipe aggregator API
 
 ## Overview / Problem Statement
 
@@ -26,7 +26,7 @@ Authentication and authorization is implemented according to the [ASP.NET Core s
 
 The performance and scalability of the recipe aggregator API is not a concern at this point, thus there is no need to implement caching, however, [a distributed caching](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/distributed?view=aspnetcore-6.0) can be added at a later stage.
 
-Deployment process is automated.
+Deployment process of Azure resources is automated with [Bicept](https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/). As part of this milestone there is no need to add a CI/CD deployment pipeline. We will provide users with a simple script or documentation steps explaining how to deploy the solution to their own Azure subscriptions.
 
 | Pros                                                                           | Cons                                  |
 | ------------------------------------------------------------------------------ | ------------------------------------- |
@@ -54,19 +54,36 @@ Alternative approach: using Serverless Function App instead of App Service
 ## Non-Functional Requirements
 
 * What are the primary performance and scalability concerns for this milestone/epic?
+  * SLOs:
+    * the Recipe API availability is greater than or equal to 99,9% (exact [availability test]((https://docs.microsoft.com/en-us/azure/azure-monitor/app/availability-overview)) will be defined later),
+    * response time of the Recipe API is below 5 seconds for 99,9% of requests.
 * Are there specific latency, availability, and RTO/RPO objectives that must be met?
+  * No
 * Are there specific bottlenecks or potential problem areas? For example, are operations CPU or I/O (network, disk) bound?
+  * Incorrectly designed database schema, so multiple CosmosDB calls are required to retrieve data.
+  * Fetching/returning too large amount of data at once
+    * a user can put large text data, so some limits should be defined for maximum size of recipes,
+    * number of returned recipes in a paginated response should be properly defined.
+  * Using only a single Azure region for CosmosDB or deploying Azure App Service and CosmosDB in different Azure regions can cause latency.
 * How large are the data sets and how fast do they grow?
+  * The Recipe API will be used for learning purposes, so the growth probably will not be big. But there should be defined some limits for the data size as mentioned previously.
 * What is the expected usage pattern of the service? For example, will there be peaks and valleys of intense concurrent usage?
+  * As mentioned before the recipe API will be used for learning purposes, so the usage will be minimal.
 * Are there specific cost constraints? (e.g. $ per transaction/device/user)
+  * There is no specific constrains, but it will be a learning sample, so the pricing tiers for all Azure resources should be chosen wisely to not generate high cost.
 
 ## Operationalization
 
 * Are there any specific considerations for the CI/CD setup of milestone/epic?
+  * For this milestone we can create a basic pipeline for building, checking format and running unit tests for the solution. There is no need to create a deployment pipeline.
 * Is there a process (manual or automated) to promote builds from lower environments to higher ones?
+  * Non-applicable
 * Does this milestone/epic require zero-downtime deployments, and if so, how are they achieved?
+  * Non-applicable
 * Are there mechanisms in place to rollback a deployment?
+  * Non-applicable
 * What is the process for monitoring the functionality provided by this milestone/epic?
+  * Monitoring will be tackled in next milestones.
 
 ## Dependencies
 
@@ -75,13 +92,11 @@ Alternative approach: using Serverless Function App instead of App Service
 ## Risks & Mitigations
 
 * Does the team need assistance from subject-matter experts?
+  * No
 * What security and privacy concerns does this milestone/epic have?
+  * No
 * Is all sensitive information and secrets treated in a safe and secure manner?
-
-## Open Questions
-
-* How stable is Azure Bicep? Will we be able to deploy all Azure components, including alerts, dashboards?
-* What kind of deployment do we want to have? Should it be a GitHub pipeline? If so, then we will need an Azure subscription. Otherwise, we could just prepare deployment scripts that user could run with their own Azure subscriptions.
+  * The solution will use Managed Identity and all secrets should be stored in Key Vault.
 
 ## Additional References
 
