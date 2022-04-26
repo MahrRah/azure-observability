@@ -49,7 +49,7 @@ namespace RecipeAggregatorApi.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
                 if (!RecipeExists(id))
                 {
@@ -90,7 +90,7 @@ namespace RecipeAggregatorApi.Controllers
 
         private bool RecipeExists(Guid id)
         {
-            return _context.Recipes.Any(e => e.Id == id);
+            return _context.Recipes.Where(e => e.Id == id).Count() > 0;
         }
     }
 }
