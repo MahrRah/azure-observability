@@ -23,7 +23,7 @@ namespace RecipeAggregatorApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Recipe>> GetRecipe(long id)
+        public async Task<ActionResult<Recipe>> GetRecipe(Guid id)
         {
             var recipe = await _context.Recipes.FindAsync(id);
 
@@ -36,7 +36,7 @@ namespace RecipeAggregatorApi.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRecipe(long id, Recipe recipe)
+        public async Task<IActionResult> PutRecipe(Guid id, Recipe recipe)
         {
             if (id != recipe.Id)
             {
@@ -74,7 +74,7 @@ namespace RecipeAggregatorApi.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRecipe(long id)
+        public async Task<IActionResult> DeleteRecipe(Guid id)
         {
             var recipe = await _context.Recipes.FindAsync(id);
             if (recipe == null)
@@ -88,7 +88,7 @@ namespace RecipeAggregatorApi.Controllers
             return NoContent();
         }
 
-        private bool RecipeExists(long id)
+        private bool RecipeExists(Guid id)
         {
             return _context.Recipes.Any(e => e.Id == id);
         }
