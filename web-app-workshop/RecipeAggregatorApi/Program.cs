@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RecipeAggregatorApi;
 using RecipeAggregatorApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,8 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+var cosmosDb = new CosmosDbConfiguration();
+builder.Configuration.GetSection(CosmosDbConfiguration.CosmosDb).Bind(cosmosDb);
 builder.Services.AddDbContext<RecipeContext>(opt =>
-    opt.UseInMemoryDatabase("Recipes"));
+    opt.UseCosmos(
+        cosmosDb.AccountEndpoint,
+        cosmosDb.AccountKey,
+        cosmosDb.DatabaseName));
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
