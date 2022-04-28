@@ -1,21 +1,18 @@
 ﻿namespace RecipeAggregatorApi.Models
 {
-    public class RecipeDTO
+    public class ResponseRecipeDTO
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = null!;
         public string? Content { get; set; }
         public string? Url { get; set; }
 
-        public RecipeDTO(string name, string? content, string? url)
+        public ResponseRecipeDTO()
         {
-            Id = Guid.NewGuid();
-            Name = name;
-            Content = content;
-            Url = url;
+            // For EF
         }
 
-        internal RecipeDTO(Recipe recipe)
+        internal ResponseRecipeDTO(Recipe recipe)
         {
             Id = recipe.Id;
             Name = recipe.Name;
