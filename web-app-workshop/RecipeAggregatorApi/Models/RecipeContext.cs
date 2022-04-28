@@ -2,7 +2,7 @@
 
 namespace RecipeAggregatorApi.Models
 {
-    public class RecipeContext: DbContext
+    public class RecipeContext : DbContext
     {
         public RecipeContext(DbContextOptions<RecipeContext> options)
             : base(options)
@@ -16,7 +16,7 @@ namespace RecipeAggregatorApi.Models
             modelBuilder.Entity<Recipe>()
                 .ToContainer(nameof(Recipes))
                 .HasNoDiscriminator()
-                .HasPartitionKey(r => r.Id);
+                .HasPartitionKey(r => r.PartitionKey);
         }
     }
 }

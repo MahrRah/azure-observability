@@ -10,6 +10,7 @@ namespace RecipeAggregatorApi.Controllers
     [Produces("application/json")]
     public class RecipesController : ControllerBase
     {
+        private const string _partitionKey = Recipe.PartitionKeyValue;
         private readonly RecipeContext _context;
 
         public RecipesController(RecipeContext context)
@@ -19,38 +20,37 @@ namespace RecipeAggregatorApi.Controllers
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<Recipe>>> GetRecipes()
+        public async Task<ActionResult<IEnumerable<RecipeDTO>>> GetRecipes()
         {
-            return await _context.Recipes.ToListAsync();
+            return await _context.Recipes.WithPartitionKey(_partitionKey).Select(r => new RecipeDTO(r)).ToListAsync();
         }
 
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Recipe>> GetRecipe(Guid id)
+        public async Task<ActionResult<RecipeDTO>> GetRecipe(Guid id)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
-
+            var recipe = await _context.Recipes.FindAsync(id, _partitionKey);
             if (recipe == null)
             {
                 return NotFound();
             }
 
-            return recipe;
+            return new RecipeDTO(recipe);
         }
 
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutRecipe(Guid id, Recipe recipe)
+        public async Task<IActionResult> PutRecipe(Guid id, RecipeDTO recipe)
         {
             if (id != recipe.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(recipe).State = EntityState.Modified;
+            _context.Entry(new Recipe(recipe)).State = EntityState.Modified;
 
             try
             {
@@ -74,9 +74,9 @@ namespace RecipeAggregatorApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<Recipe>> PostRecipe(Recipe recipe)
+        public async Task<ActionResult<Recipe>> PostRecipe(RecipeDTO recipe)
         {
-            _context.Recipes.Add(recipe);
+            _context.Recipes.Add(new Recipe(recipe));
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetRecipe), new { id = recipe.Id }, recipe);
@@ -87,7 +87,7 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteRecipe(Guid id)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
+            var recipe = await _context.Recipes.FindAsync(id, _partitionKey);
             if (recipe == null)
             {
                 return NotFound();
@@ -101,7 +101,7 @@ namespace RecipeAggregatorApi.Controllers
 
         private bool RecipeExists(Guid id)
         {
-            return _context.Recipes.Where(e => e.Id == id).Count() > 0;
+            return _context.Recipes.WithPartitionKey(_partitionKey).Where(e => e.Id == id).Count() > 0;
         }
     }
 }
