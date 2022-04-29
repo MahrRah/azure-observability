@@ -43,30 +43,17 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutRecipe(Guid id, ResponseRecipeDTO recipe)
+        public async Task<IActionResult> PutRecipe(Guid id, RequestRecipeDTO recipe)
         {
-            if (id != recipe.Id)
+            if (!RecipeExists(id))
             {
-                return BadRequest();
+                return NotFound();
             }
-            var dbRecipe = new Recipe(recipe.Id, recipe.Name, recipe.Content, recipe.Url);
+
+            var dbRecipe = new Recipe(id, recipe.Name, recipe.Content, recipe.Url);
             _context.Entry(dbRecipe).State = EntityState.Modified;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (!RecipeExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -78,7 +65,7 @@ namespace RecipeAggregatorApi.Controllers
         {
             var dbRecipe = new Recipe(recipe.Name, recipe.Content, recipe.Url);
             _context.Recipes.Add(dbRecipe);
-            
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetRecipe), new { id = dbRecipe.Id }, new ResponseRecipeDTO(dbRecipe));
