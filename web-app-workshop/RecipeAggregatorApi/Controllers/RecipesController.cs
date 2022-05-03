@@ -45,13 +45,17 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutRecipe(Guid id, RequestRecipeDTO recipe)
         {
-            if (!RecipeExists(id))
+            var existing = await _context.Recipes.FindAsync(id, _partitionKey);
+            if (existing == null)
             {
                 return NotFound();
             }
 
-            var dbRecipe = new Recipe(id, recipe.Name, recipe.Content, recipe.Url);
-            _context.Entry(dbRecipe).State = EntityState.Modified;
+            existing.Name = recipe.Name;
+            existing.Content = recipe.Content;
+            existing.Url = recipe.Url;
+
+            _context.Entry(existing).State = EntityState.Modified;
 
             await _context.SaveChangesAsync();
 
@@ -86,11 +90,6 @@ namespace RecipeAggregatorApi.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool RecipeExists(Guid id)
-        {
-            return _context.Recipes.WithPartitionKey(_partitionKey).Where(e => e.Id == id).Count() > 0;
         }
     }
 }
