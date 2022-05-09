@@ -16,6 +16,9 @@ builder.Services.AddDbContext<RecipeContext>(opt =>
         cosmosDb.AccountKey,
         cosmosDb.DatabaseName));
 
+// To enables Application Insights telemetry collection, uncomment the following line
+// builder.Services.AddApplicationInsightsTelemetry();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

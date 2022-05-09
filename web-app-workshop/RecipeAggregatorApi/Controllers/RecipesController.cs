@@ -12,17 +12,32 @@ namespace RecipeAggregatorApi.Controllers
     {
         private const string _partitionKey = Recipe.PartitionKeyValue;
         private readonly RecipeContext _context;
+        private readonly ILogger _logger;
 
-        public RecipesController(RecipeContext context)
+        public RecipesController(RecipeContext context, ILogger<RecipesController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ResponseRecipeDTO>>> GetRecipes()
         {
-            return await _context.Recipes.WithPartitionKey(_partitionKey).Select(r => new ResponseRecipeDTO(r)).ToListAsync();
+            _logger.LogInformation("Getting all recipes");
+            var recipes = new List<ResponseRecipeDTO>();
+            var ids = await _context.Recipes.WithPartitionKey(_partitionKey).Select(r => r.Id).ToListAsync();
+
+            foreach (var id in ids)
+            {
+                var recipe = await _context.Recipes.FindAsync(id, _partitionKey);
+                if (recipe != null)
+                {
+                    recipes.Add(new ResponseRecipeDTO(recipe));
+                }
+            }
+
+            return recipes;
         }
 
         [HttpGet("{id}")]
@@ -30,9 +45,11 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ResponseRecipeDTO>> GetRecipe(Guid id)
         {
+            _logger.LogInformation("Getting recipe {Id}", id);
             var recipe = await _context.Recipes.FindAsync(id, _partitionKey);
             if (recipe == null)
             {
+                _logger.LogWarning("Cannot get recipe {Id}, recipe does not exist", id);
                 return NotFound();
             }
 
@@ -45,9 +62,11 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutRecipe(Guid id, RequestRecipeDTO recipe)
         {
+            _logger.LogInformation("Updating recipe {Id}", id);
             var existing = await _context.Recipes.FindAsync(id, _partitionKey);
             if (existing == null)
             {
+                _logger.LogWarning("Cannot get recipe {Id}, recipe does not exist", id);
                 return NotFound();
             }
 
@@ -57,7 +76,16 @@ namespace RecipeAggregatorApi.Controllers
 
             _context.Entry(existing).State = EntityState.Modified;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Recipe {Id} updated", existing.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update recipe {Id}", existing.Id);
+                throw;
+            }
 
             return NoContent();
         }
@@ -67,10 +95,20 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Recipe>> PostRecipe(RequestRecipeDTO recipe)
         {
+            _logger.LogInformation("Creating recipe {Name}", recipe.Name);
             var dbRecipe = new Recipe(recipe.Name, recipe.Content, recipe.Url);
-            _context.Recipes.Add(dbRecipe);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Recipes.Add(dbRecipe);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Recipe {Name} created", dbRecipe.Name);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create recipe {Name}", dbRecipe.Name);
+                throw;
+            }
 
             return CreatedAtAction(nameof(GetRecipe), new { id = dbRecipe.Id }, new ResponseRecipeDTO(dbRecipe));
         }
@@ -80,14 +118,25 @@ namespace RecipeAggregatorApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteRecipe(Guid id)
         {
+            _logger.LogInformation("Deleting recipe {Id}", id);
             var recipe = await _context.Recipes.FindAsync(id, _partitionKey);
             if (recipe == null)
             {
+                _logger.LogWarning("Cannot get recipe {Id}, recipe does not exist", id);
                 return NotFound();
             }
 
-            _context.Recipes.Remove(recipe);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Recipes.Remove(recipe);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Recipe {Id} deleted", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete recipe {Id}", id);
+                throw;
+            }
 
             return NoContent();
         }
