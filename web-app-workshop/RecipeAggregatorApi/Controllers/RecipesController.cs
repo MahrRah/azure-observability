@@ -25,7 +25,19 @@ namespace RecipeAggregatorApi.Controllers
         public async Task<ActionResult<IEnumerable<ResponseRecipeDTO>>> GetRecipes()
         {
             _logger.LogInformation("Getting all recipes");
-            return await _context.Recipes.WithPartitionKey(_partitionKey).Select(r => new ResponseRecipeDTO(r)).ToListAsync();
+            var recipes = new List<ResponseRecipeDTO>();
+            var ids = await _context.Recipes.WithPartitionKey(_partitionKey).Select(r => r.Id).ToListAsync();
+
+            foreach (var id in ids)
+            {
+                var recipe = await _context.Recipes.FindAsync(id, _partitionKey);
+                if (recipe != null)
+                {
+                    recipes.Add(new ResponseRecipeDTO(recipe));
+                }
+            }
+
+            return recipes;
         }
 
         [HttpGet("{id}")]
