@@ -4,78 +4,126 @@ using MQTTnet.Client;
 using Poc.Shared;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 
-// EventHub settings
-// LoadInfraConfig() Use configs fiels instead of env variables
-var mqttUrl = System.Environment.GetEnvironmentVariable("MQTT_URL");
-var mqttTopic = System.Environment.GetEnvironmentVariable("MQTT_TOPIC");
-var eventhubConnectionString = System.Environment.GetEnvironmentVariable("EVENTHUB_CONNECTION_STRING");
-var eventHubName = System.Environment.GetEnvironmentVariable("EVENTHUB_NAME");
-
-
-var mqttFactory = new MqttFactory();
-
-
-using (var mqttClient = mqttFactory.CreateMqttClient())
+internal class Program
 {
-    var mqttClientOptions = new MqttClientOptionsBuilder()
-        .WithTcpServer(mqttUrl)
-        .Build();
-
-    // Setup message handling before connecting so that queued messages
-    // are also handled properly. When there is no event handler attached all
-    // received messages get lost.
-    mqttClient.ApplicationMessageReceivedAsync += async e =>
+    private static void Main(string[] args)
     {
-        Console.WriteLine("Received application message.");
-        Console.WriteLine(e.ApplicationMessage.ConvertPayloadToString());
+        // EventHub settings
+        var eventhubConnectionString = Environment.GetEnvironmentVariable("EVENTHUB_CONNECTION_STRING") ?? throw new ArgumentException("EVENTHUB_CONNECTION_STRING is not defined");
+        var eventHubName = Environment.GetEnvironmentVariable("EVENTHUB_NAME") ?? throw new ArgumentException("EVENTHUB_NAME is not defined");
 
-        await using (var producer = new EventHubProducerClient(eventhubConnectionString, eventHubName))
+
+        // var mqttFactory = new MqttFactory();
+        var response = await getMqttSubClient(
+        async e =>
+                    {
+                        Console.WriteLine($"Received application message {e.ApplicationMessage.ConvertPayloadToString()}");
+                        SampleMessage sampleMessage = SampleMessage.FromByteArray(e.ApplicationMessage.Payload);
+
+                        //create own service method
+                        await using (var producer = new EventHubProducerClient(eventhubConnectionString, eventHubName))
+                        {
+                            var message = e.ApplicationMessage.ConvertPayloadToString();
+                            using EventDataBatch eventBatch = await producer.CreateBatchAsync();
+                            eventBatch.TryAdd(new EventData(new BinaryData(message)));
+                            await producer.SendAsync(eventBatch);
+                        }
+                    }
+
+        );
+        while (true)
         {
-            var message = e.ApplicationMessage.ConvertPayloadToString();
-            using EventDataBatch eventBatch = await producer.CreateBatchAsync();
-            eventBatch.TryAdd(new EventData(new BinaryData(message)));
-            await producer.SendAsync(eventBatch);
-            Console.WriteLine("Message was send to Eventhub.");
+            Task.WaitAll(response);
+
         }
-    };
 
-    await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
+        // using (var mqttClient = mqttFactory.CreateMqttClient())
+        // {
+        //     InfraConfig config = ConfigLoader.LoadInfraConfig();
+        //     var mqttClientOptions = new MqttClientOptionsBuilder()
+        //         .WithTcpServer(config.MqttUrl)
+        //         .Build();
 
-    var mqttSubscribeOptions = mqttFactory.CreateSubscribeOptionsBuilder()
-        .WithTopicFilter(f => { f.WithTopic(mqttTopic); })
-        .Build();
+        //     // Setup message handling before connecting so that queued messages
+        //     // are also handled properly. When there is no event handler attached all
+        //     // received messages get lost.
+        //     mqttClient.ApplicationMessageReceivedAsync += async e =>
+        //     {
+        //         Console.WriteLine($"Received application message {e.ApplicationMessage.ConvertPayloadToString()}");
+        //         SampleMessage sampleMessage = SampleMessage.FromByteArray(e.ApplicationMessage.Payload);
 
-    var response = mqttClient.SubscribeAsync(mqttSubscribeOptions, CancellationToken.None);
-    Console.WriteLine("MQTT client subscribed to topic.");
+        //         //create own service method
+        //         await using (var producer = new EventHubProducerClient(eventhubConnectionString, eventHubName))
+        //         {
+        //             var message = e.ApplicationMessage.ConvertPayloadToString();
+        //             using EventDataBatch eventBatch = await producer.CreateBatchAsync();
+        //             eventBatch.TryAdd(new EventData(new BinaryData(message)));
+        //             await producer.SendAsync(eventBatch);
+        //         }
+        //     };
 
-    while (true)
-    {
-        Task.WaitAll(response);
+        //     await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
 
+        //     var mqttSubscribeOptions = mqttFactory.CreateSubscribeOptionsBuilder()
+        //         .WithTopicFilter(f => { f.WithTopic(config.Topic); })
+        //         .Build();
+
+        //     var response = mqttClient.SubscribeAsync(mqttSubscribeOptions, CancellationToken.None);
+        //     Console.WriteLine("MQTT client subscribed to topic.");
+
+        // while (true)
+        // {
+        //     Task.WaitAll(response);
+
+        // }
+
+        // async e =>
+        //         {
+        //             Console.WriteLine($"Received application message {e.ApplicationMessage.ConvertPayloadToString()}");
+        //             SampleMessage sampleMessage = SampleMessage.FromByteArray(e.ApplicationMessage.Payload);
+
+        //             //create own service method
+        //             await using (var producer = new EventHubProducerClient(eventhubConnectionString, eventHubName))
+        //             {
+        //                 var message = e.ApplicationMessage.ConvertPayloadToString();
+        //                 using EventDataBatch eventBatch = await producer.CreateBatchAsync();
+        //                 eventBatch.TryAdd(new EventData(new BinaryData(message)));
+        //                 await producer.SendAsync(eventBatch);
+        //             }
+        //         };
+        // }
+
+        async Task<MqttClientSubscribeResult>? getMqttSubClient(Func<MqttApplicationMessageReceivedEventArgs, Task> lambda)
+        {
+
+            var mqttFactory = new MqttFactory();
+
+
+            using (var mqttClient = mqttFactory.CreateMqttClient())
+            {
+                InfraConfig config = ConfigLoader.LoadInfraConfig();
+                var mqttClientOptions = new MqttClientOptionsBuilder()
+                    .WithTcpServer(config.MqttUrl)
+                    .Build();
+
+                // Setup message handling before connecting so that queued messages
+                // are also handled properly. When there is no event handler attached all
+                // received messages get lost.
+                mqttClient.ApplicationMessageReceivedAsync += lambda;
+
+                await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
+
+                var mqttSubscribeOptions = mqttFactory.CreateSubscribeOptionsBuilder()
+                    .WithTopicFilter(f => { f.WithTopic(config.Topic); })
+                    .Build();
+
+                var response = mqttClient.SubscribeAsync(mqttSubscribeOptions, CancellationToken.None);
+                Console.WriteLine("MQTT client subscribed to topic.");
+                return  response;
+
+            }
+        }
     }
-
 }
-
-// Move this to shared libary
-InfraConfig LoadInfraConfig()
-{
-    var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .Build();
-    // assemblyOfThatType.GetType(fullName)
-    InfraConfig infraConfig = deserializer.Deserialize<InfraConfig>(File.ReadAllText(@"./configuration/infraconfig.yaml"));
-    if (infraConfig == null)
-    {
-        throw new InvalidCastException("./configuration/infraconfig.yaml - could not deserialize");
-    }
-    return infraConfig;
-}
-
-
-
-
-

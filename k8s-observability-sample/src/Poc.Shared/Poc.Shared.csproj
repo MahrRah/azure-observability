@@ -6,4 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="BinaryFormatter" Version="3.0.0" />
+    <PackageReference Include="YamlDotNet" Version="12.0.0" />
+    <PackageReference Include="MQTTnet" Version="4.0.1.184" />
+  </ItemGroup>
+
 </Project>

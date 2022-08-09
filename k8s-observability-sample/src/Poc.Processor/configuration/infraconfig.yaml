@@ -1,0 +1,2 @@
+mqttUrl: "localhost"
+topic: "output"

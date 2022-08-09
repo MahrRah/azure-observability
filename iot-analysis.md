@@ -7,7 +7,7 @@
   - List of metrics https://github.com/Azure/iotedge/blob/master/doc/BuiltInMetrics.md
   - Visualization [Workbook](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-explore-curated-visualizations?view=iotedge-2020-11&tabs=devices%2Cmessaging)
   - Use Prometheus client to create custom metrics
-  - Configured using deployment manifest
+  - Configured using deployment manifest    
     ```json
     "monitorModule": {
             "type": "docker",
@@ -41,6 +41,7 @@
 ## Logs
 
 - [ELMS](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-retrieve-iot-edge-logs?view=iotedge-2020-11) sample to use direct method for log retival (pull method).
+
   - Makes use fo direct method `GetModuleLogs` and time-triggered function to periodically get logs.
     - **Careful** This might cause duplication of lines of logs.
   - **Down side:** HTTP request, henc **needs** Internet connectivity
@@ -51,7 +52,6 @@
     - Stores in blob storage modules and syncs to cloud storage
     - Directly sends logs to cloud storage
     - Sends data to Log Analytics
-
 
 ## Tracing
 
