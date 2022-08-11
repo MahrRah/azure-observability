@@ -1,5 +1,7 @@
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using Poc.Shared.Configs;
+
 namespace Poc.Shared
 {
 

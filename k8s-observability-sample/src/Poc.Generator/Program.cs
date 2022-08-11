@@ -11,40 +11,16 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        MqttClient? mqttClient = null;
-        MqttFactory mqttFactory = new MqttFactory();
         string version = "1.0"; //TODO load version from debug/build?
 
         //there will be two config files: ./configuration/appconfig.yaml and ./configuration/infraconfig.yaml
 
         InfraConfig infraConfig = ConfigLoader.LoadInfraConfig();
-        // .LoadInfraConfig();
         AppConfig appConfig = ConfigLoader.LoadAppConfig();
 
-        //TODO setup file change handler to pickup changes in the folder
-
-        FileSystemWatcher watcher = new FileSystemWatcher();
-        watcher.Path = @"./configuration";
-        Console.WriteLine($"File watcher set to: {watcher.Path} ");
-
-        watcher.NotifyFilter = NotifyFilters.Attributes |
-                                NotifyFilters.CreationTime |
-                                NotifyFilters.LastWrite |
-                                NotifyFilters.Size;
-        //for now only 
-
-        watcher.Changed += OnConfigChanged;
-        watcher.Deleted += OnConfigChanged;
-        watcher.Created += OnConfigChanged;
-        watcher.Error += OnError;
-
-        //temporarily disable this, due to Symlink issue with .NET and configmaps. 
-        //Use hack to reload appconfig.yaml for demo in our while loop
-        watcher.IncludeSubdirectories = false;
-        watcher.Filter = "*.yaml";
-        //watcher.EnableRaisingEvents = true;
-
-        // await ConnectMqttAsync();
+        MqttClient? mqttClient = null;
+        MqttFactory mqttFactory = new MqttFactory();
+        
         await SendMessagesAsync();
 
 
@@ -117,82 +93,5 @@ internal class Program
 
         }
 
-
-
-        async void OnConfigChanged(object sender, FileSystemEventArgs e)
-        {
-            if (e.ChangeType != WatcherChangeTypes.Changed)
-            {
-                return;
-            }
-            string originalFileName = e.FullPath;
-            Console.WriteLine($"File change detected {originalFileName}");
-            if (originalFileName.Contains("appconfig.yaml"))
-                LoadAppConfig();
-            else if (originalFileName.Contains("infraconfig.yaml"))
-            {
-                InfraConfig current = new InfraConfig { MqttUrl = infraConfig.MqttUrl, Topic = infraConfig.Topic };
-                LoadInfraConfig();
-                //only fire a reconnection if there is a change in config:
-                if (current.MqttUrl != current.Topic)
-                {
-                    Console.WriteLine($"Config changed, reconnecting MQTT");
-                    await ConnectMqttAsync();
-                }
-
-            }
-        }
-
-        void OnError(object sender, ErrorEventArgs e)
-        {
-            Console.WriteLine("OnError fired");
-            if (e != null)
-            {
-                Console.WriteLine($"Message: {e.GetException().Message}");
-            }
-        }
     }
 }
-
-
-// void LoadAppConfig()
-// {
-//     var deserializer = new DeserializerBuilder()
-//                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
-//                 .Build();
-//     appConfig = deserializer.Deserialize<AppConfig>(File.ReadAllText(@"./configuration/appconfig.yaml"));
-//     Console.WriteLine($"AppConfig check, Medium= {appConfig.Medium}");
-//     if (appConfig == null)
-//     {
-//         throw new InvalidCastException("./configuration/appconfig.yaml  - could not deserialize");
-//     }
-// }
-
-// void LoadInfraConfig()
-// {
-//     var deserializer = new DeserializerBuilder()
-//                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
-//                 .Build();
-//     infraConfig = deserializer.Deserialize<InfraConfig>(File.ReadAllText(@"./configuration/infraconfig.yaml"));
-//     if (infraConfig == null)
-//     {
-//         throw new InvalidCastException("./configuration/infraconfig.yaml - could not deserialize");
-//     }
-// }
-
-// public class InfraConfig
-// {
-//     public string? MqttUrl { get; set; } = "localhost";
-//     public string? Topic { get; set; }
-// }
-
-// public class AppConfig
-// {
-//     public int FrequencySeconds { get; set; }
-//     public string? Medium { get; set; }
-// }
-
-
-
-
-
