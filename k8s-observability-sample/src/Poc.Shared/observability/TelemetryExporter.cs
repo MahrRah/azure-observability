@@ -24,7 +24,7 @@ public class TelemetryExporter
     }
 
 
-    public Counter<T> getCounter<T>(String counterType) where T : struct, IComparable
+    public Counter<T> GetCounter<T>(String counterType) where T : struct, IComparable
     {
 
         Meter MyMeter = new(serviceName, serviceVersion);
@@ -38,7 +38,7 @@ public class TelemetryExporter
 
     }
 
-    public ILogger getLogger<T>()
+    public ILogger GetLogger<T>()
     {
         using var loggerFactory = LoggerFactory.Create(builder =>
                 {
@@ -60,7 +60,7 @@ public class TelemetryExporter
         return loggerFactory.CreateLogger<T>();
     }
 
-    ActivitySource getTracer(string serviceName)
+    public ActivitySource GetTracer()
     {
 
         var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
@@ -73,9 +73,9 @@ public class TelemetryExporter
             .AddSource(serviceName)
             .SetResourceBuilder(
                 ResourceBuilder.CreateDefault()
-                    .AddService(serviceName: serviceName, serviceVersion: serviceVersion)).Build();
+                    .AddService(serviceName: this.serviceName, serviceVersion: this.serviceVersion)).Build();
         ;
-        return new ActivitySource(serviceName);
+        return new ActivitySource(this.serviceName);
 
 
     }

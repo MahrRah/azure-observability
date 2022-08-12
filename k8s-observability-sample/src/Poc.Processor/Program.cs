@@ -6,6 +6,8 @@ using Poc.Shared.Configs;
 using Poc.Shared.Observability;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 
 internal class Program
@@ -14,7 +16,9 @@ internal class Program
     {
         String serviceName = "Processor";
         String serviceVersion = "1.0.0";
-        TelemetryExporter telemetryExporter = new TelemetryExporter(serviceName,serviceVersion);
+        TelemetryExporter telemetryExporter = new TelemetryExporter(serviceName, serviceVersion);
+        ILogger logger = telemetryExporter.GetLogger<Program>();
+        ActivitySource tracer = telemetryExporter.GetTracer();
 
         // EventHub settings
         String eventhubConnectionString = Environment.GetEnvironmentVariable("EVENTHUB_CONNECTION_STRING") ?? throw new ArgumentException("EVENTHUB_CONNECTION_STRING is not defined");
@@ -35,14 +39,16 @@ internal class Program
             // received messages get lost.
             mqttClient.ApplicationMessageReceivedAsync += async e =>
             {
-                Console.WriteLine($"Received application message {e.ApplicationMessage.ConvertPayloadToString()}");
+                logger.LogInformation($"Received application message {e.ApplicationMessage.ConvertPayloadToString()}");
                 await using (var eventHubProducerClient = new EventHubProducerClient(eventhubConnectionString, eventHubName))
                 {
                     using (EventDataBatch eventBatch = await eventHubProducerClient.CreateBatchAsync())
                     {
-
-                        eventBatch.TryAdd(new EventData(new BinaryData(e.ApplicationMessage.Payload)));
-                        await eventHubProducerClient.SendAsync(eventBatch);
+                        using (var activity = tracer.StartActivity("Send to Eventhub"))
+                        {
+                            eventBatch.TryAdd(new EventData(new BinaryData(e.ApplicationMessage.Payload)));
+                            await eventHubProducerClient.SendAsync(eventBatch);
+                        }
 
                     };
                 }
@@ -55,7 +61,7 @@ internal class Program
                 .Build();
 
             var response = mqttClient.SubscribeAsync(mqttSubscribeOptions, CancellationToken.None);
-            Console.WriteLine("MQTT client subscribed to topic.");
+            logger.LogInformation("MQTT client subscribed to topic.");
 
             while (true)
             {
