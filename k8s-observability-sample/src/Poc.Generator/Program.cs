@@ -3,6 +3,7 @@ using MQTTnet;
 using MQTTnet.Client;
 using System.Text.Json;
 using Poc.Shared;
+using Poc.Shared.Configs;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using System.Threading.Tasks;

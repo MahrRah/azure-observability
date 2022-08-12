@@ -3,6 +3,7 @@ using MQTTnet;
 using MQTTnet.Client;
 using Poc.Shared;
 using Poc.Shared.Configs;
+using Poc.Shared.Observability;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 
@@ -11,6 +12,10 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
+        String serviceName = "Processor";
+        String serviceVersion = "1.0.0";
+        TelemetryExporter telemetryExporter = new TelemetryExporter(serviceName,serviceVersion);
+
         // EventHub settings
         String eventhubConnectionString = Environment.GetEnvironmentVariable("EVENTHUB_CONNECTION_STRING") ?? throw new ArgumentException("EVENTHUB_CONNECTION_STRING is not defined");
         String eventHubName = Environment.GetEnvironmentVariable("EVENTHUB_NAME") ?? throw new ArgumentException("EVENTHUB_NAME is not defined");

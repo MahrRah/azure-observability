@@ -3,7 +3,4 @@ kind: ConfigMap
 metadata:
   name: poc-processor-configuration
 data:
-  infraconfig.mqttUrl: "mosquitto.mosquitto.svc.cluster.local"
-  infraconfig.topic: "generator"
   eventhub.name: "default-eventhubname"
-  storage.containername: "default-storagecontainername"

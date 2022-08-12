@@ -6,3 +6,6 @@ data:
   appconfig.yaml: |
     frequencySeconds: 3
     medium: 'oil'
+  infraconfig.yaml: |
+    mqttUrl: mosquitto.mosquitto.svc.cluster.local
+    topic: generator

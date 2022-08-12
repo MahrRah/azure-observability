@@ -3,3 +3,6 @@ resources:
 - poc-generator-configmap.yaml
 - poc-processor-deployment.yaml
 - poc-processor-configmap.yaml
+- namespace.yaml
+
+namespace: poc-app

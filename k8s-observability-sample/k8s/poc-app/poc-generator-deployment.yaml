@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: poc-generator
-        image: privaterepo.io/poc/poc-generator:0.4
+        image: optlsample.azurecr.io/poc/poc-generator:1.0
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -27,8 +27,6 @@ spec:
         volumeMounts:
         - mountPath: /app/configuration
           name: config
-        - mountPath: /app/configuration-mw
-          name: config-mw
       volumes:
       - name: config
         configMap:
@@ -36,9 +34,6 @@ spec:
           items:
           - key: "appconfig.yaml"
             path: appconfig.yaml
-      - name: config-mw
-        configMap:
-          name: poc-generator-configuration-mw
-          items:
           - key: "infraconfig.yaml"
             path: infraconfig.yaml
+   
